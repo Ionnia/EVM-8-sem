@@ -24,6 +24,9 @@ def get_all_sigmas(graph, group, v_index):
 # Последовательный алгоритм компоновки.
 # Возвращает двумерный массив, в котором первое измерение это "группы", а второе элементы этих групп
 def sequential_algorithm(graph, group_sizes, info = True):
+    # Проверка
+    if graph.size != sum(group_sizes):
+        raise Exception("Sum of group sizes not equal to number of verticies")
     # Элементы массива result -- это массивы, содержащие индесы вершин, которые находятся в одной группе
     result = []
     # Основной цикл метода

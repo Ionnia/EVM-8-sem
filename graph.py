@@ -1,3 +1,5 @@
+from sys import maxsize as MAX_SIZE
+
 class Graph:
     def __init__(self, matrix):
         self.matrix = matrix            # Матрица смежности
@@ -36,8 +38,8 @@ class Graph:
     def get_min_local_degrees(self):
         self.update_min_local_degrees()
         # Находим минимальную локальную степень
-        min = self.px[0]
-        for i in range(1, self.size):
+        min = MAX_SIZE
+        for i in range(0, self.size):
             if (i not in self.used_verticies) and (self.px[i] < min):
                 min = self.px[i]
 
