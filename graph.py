@@ -4,7 +4,6 @@ class Graph:
         self.px = []                    # Локальная степень каждой вершины
         self.size = len(self.matrix)    # Размерность матрицы
         self.used_verticies = set()     # Уже использованные для распределения вершины
-        print("Set size ", len(self.used_verticies))
         for i in range(0, self.size):
             self.px.append(0)
             for j in range(0, self.size):

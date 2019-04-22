@@ -23,7 +23,7 @@ def get_all_sigmas(graph, group, v_index):
 
 # Последовательный алгоритм компоновки.
 # Возвращает двумерный массив, в котором первое измерение это "группы", а второе элементы этих групп
-def sequential_algorithm(graph, group_sizes):
+def sequential_algorithm(graph, group_sizes, info = True):
     # Элементы массива result -- это массивы, содержащие индесы вершин, которые находятся в одной группе
     result = []
     # Основной цикл метода
@@ -37,11 +37,12 @@ def sequential_algorithm(graph, group_sizes):
         # Новая группа
         group = [v_index] + graph.get_all_adjacent_verticies(v_index)
         # Вывод информации
-        print("Step #", k)
-        graph.print_info()
-        print("Minimal local degree: ", min_local_degree_verticies)
-        print("Best verticies: ", best_verticies)
-        print("Group: ", group)
+        if info:
+            print("STEP #%d" % k, "----------------------")
+            graph.print_info()
+            print("Minimal local degree: ", min_local_degree_verticies)
+            print("Best verticies: ", best_verticies)
+            print("Group: ", group)
         # print("All verticies adjacent to first with min local degree: ", [min_local[0]] + g.get_all_adjacent_verticies(min_local[0]))
         # Возможны три случая
         while len(group) != group_sizes[k]:
@@ -51,14 +52,22 @@ def sequential_algorithm(graph, group_sizes):
                 # Получаем индекс вершины с максимальной сигмой
                 max_sigma_index = get_max_index(sigmas)
                 v_index_max_sigma = verticies[max_sigma_index]
+                # Вывод информации
+                if info:
+                    print("Deleting x%d" % (v_index_max_sigma), "vertex from a group")
                 # Удаляем эту вершину из группы
                 group.remove(v_index_max_sigma)
             elif len(group) < group_sizes[k]:
                 graph.add_to_used_verticies(group)
                 min_local_degree_verticies = graph.get_min_local_degrees()
                 best_verticies = graph.get_best_verticies(min_local_degree_verticies)
+                # Вывод информации
+                if info:
+                    print("Adding more verticies!")
                 # Добавляем в группу новые вершины
                 group += [best_verticies[0]] + graph.get_all_adjacent_verticies(best_verticies[0])
+            if info:
+                print("Group update: ", group)
         graph.add_to_used_verticies(group)
         result.append(group)
     return result
