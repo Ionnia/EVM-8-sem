@@ -1,4 +1,5 @@
 from graph import Graph
+from itertools import combinations      # Нужно для получения всех перестановок групп
 
 
 def get_max_index(arr):
@@ -74,3 +75,109 @@ def sequential_algorithm(graph, group_sizes, info = True):
         graph.add_to_used_verticies(group)
         result.append(group)
     return result
+
+# Возвращает значение alpha
+def get_alpha(graph, v_index, group1, group2):
+    alpha = 0
+    for i in range(0, len(group2)):
+        if v_index != group2[i]:
+            alpha += graph.get_num_of_edges(v_index, group2[i])
+    for i in range(0, len(group1)):
+        if v_index != group1[i]:
+            alpha -= graph.get_num_of_edges(v_index, group1[i])
+    if v_index in group2:
+        alpha *= -1
+    return alpha
+
+# Возвращает двумерный массив со значениями b между соответствующими вершинами
+def get_b(graph, alpha1, alpha2, group1, group2):
+    b = []
+    for i in range(0, len(alpha1)):
+        tmp = []
+        for j in range(0, len(alpha2)):
+            b_value = alpha1[i] + alpha2[j] - 2 * graph.get_num_of_edges(group1[i], group2[j])
+            tmp.append(b_value)
+        b.append(tmp)
+    return b
+
+# Функция находит и возвращает индекс максимального элемента в двумерном массиве b
+def get_max_b_indicies(b):
+    group1_index = 0
+    group2_index = 0
+    for i in range(0, len(b)):
+        for j in range(0, len(b[i])):
+            if b[group1_index][group2_index] < b[i][j]:
+                group1_index, group2_index = i, j
+    return group1_index, group2_index
+
+# Функция возвращает True, если согласно матрице b существуют две вершины, которые
+# выгодно поменять местами
+def swap_is_profitable(b):
+    result = False
+    for i in range(0, len(b)):
+        for j in range(0, len(b[i])):
+            if b[i][j] > 0:
+                result = True
+                break
+    return result
+
+# Вывод матрицы b
+def print_b(b, group1, group2):
+    print("B: ")
+    for i in range(0, len(b)):
+        print("| ", end='')
+        for j in range(0, len(b[i])):
+            print("x%d%d %4d | " % (group1[i], group2[j], b[i][j]), end='')
+        print()
+
+# Итерационный алгоритм компоновки
+# Возвращает двумерный массив, в котором первое измерение это "группы", а второе элементы этих групп
+def iterative_algorithm(graph, groups, info = True):
+    # Создаём итератор, который даёт нам все перестановки по две группы
+    combs = combinations(range(0, len(groups)), 2)
+    # Пока не закончатся все перестановки
+    try:
+        while True:
+            # Получаем новую пару групп
+            pair = next(combs)
+            group1 = groups[pair[0]]
+            group2 = groups[pair[1]]
+            # Высчитываем характеристику alpha первой группы
+            alpha1 = []
+            for i in range(0, len(group1)):
+                alpha1.append( get_alpha(graph, group1[i], group1, group2))
+            # Высчитываем характеристику alpha второй группы
+            alpha2 = []
+            for i in range(0, len(group2)):
+                alpha2.append( get_alpha(graph, group2[i], group1, group2))
+            # Вычисление характеристики b
+            b = get_b(graph, alpha1, alpha2, group1, group2)
+            if info:
+                # Вывод дополнительной информации
+                print("Pair of groups are %2d and %2d" % (pair[0], pair[1]))
+                print("Group #%2d: " % (pair[0]), group1)
+                print("Group #%2d: " % (pair[1]), group2)
+                print("Alpha #%2d: " % (pair[0]), alpha1)
+                print("Alpha #%2d: " % (pair[1]), alpha2)
+                print_b(b, group1, group2)
+            while swap_is_profitable(b):
+                # Нахождение индексов вершин для перестановки в массивах group1, group2
+                group1_index, group2_index = get_max_b_indicies(b)
+                # Меняем местами вершины в группах
+                group1[group1_index], group2[group2_index] = group2[group2_index], group1[group1_index]
+                # Высчитываем характеристику alpha первой группы
+                alpha1 = []
+                for i in range(0, len(group1)):
+                    alpha1.append( get_alpha(graph, group1[i], group1, group2))
+                # Высчитываем характеристику alpha второй группы
+                alpha2 = []
+                for i in range(0, len(group2)):
+                    alpha2.append( get_alpha(graph, group2[i], group1, group2))
+                # Заново вычисляем характеристику b
+                b = get_b(graph, alpha1, alpha2, group1, group2)
+                if info:
+                    print("Change x%d and x%d" % (group1[group1_index], group2[group2_index]))
+                    print_b(b, group1, group2)
+    except StopIteration:
+        pass
+    return groups
