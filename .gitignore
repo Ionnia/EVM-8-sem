@@ -1,4 +1,6 @@
 *.pdf
 .idea
 .vscode
+*.odt
+*.csv
 __pycache__

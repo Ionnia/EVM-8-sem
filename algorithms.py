@@ -9,7 +9,6 @@ def get_max_index(arr):
             max_index = i
     return max_index
 
-
 def get_all_sigmas(graph, group, v_index):
     verticies = [v for v in group if v is not v_index]
     result = []
@@ -42,7 +41,7 @@ def sequential_algorithm(graph, group_sizes, info = True):
         group = [v_index] + graph.get_all_adjacent_verticies(v_index)
         # Вывод информации
         if info:
-            print("STEP #%d" % k, "----------------------")
+            print("STEP #%d" % (k+1), "----------------------")
             graph.print_info()
             print("Minimal local degree: ", min_local_degree_verticies)
             print("Best verticies: ", best_verticies)
@@ -127,7 +126,7 @@ def print_b(b, group1, group2):
     for i in range(0, len(b)):
         print("| ", end='')
         for j in range(0, len(b[i])):
-            print("x%d%d %4d | " % (group1[i], group2[j], b[i][j]), end='')
+            print("x%5s %4d | " % ( (str(group1[i]+1) + "_" + str(group2[j]+1)), b[i][j]), end='')
         print()
 
 # Итерационный алгоритм компоновки
@@ -135,6 +134,7 @@ def print_b(b, group1, group2):
 def iterative_algorithm(graph, groups, info = True):
     # Создаём итератор, который даёт нам все перестановки по две группы
     combs = combinations(range(0, len(groups)), 2)
+    # Number of iterations
     # Пока не закончатся все перестановки
     try:
         while True:
@@ -154,11 +154,11 @@ def iterative_algorithm(graph, groups, info = True):
             b = get_b(graph, alpha1, alpha2, group1, group2)
             if info:
                 # Вывод дополнительной информации
-                print("Pair of groups are %2d and %2d" % (pair[0], pair[1]))
-                print("Group #%2d: " % (pair[0]), group1)
-                print("Group #%2d: " % (pair[1]), group2)
-                print("Alpha #%2d: " % (pair[0]), alpha1)
-                print("Alpha #%2d: " % (pair[1]), alpha2)
+                print("Pair of groups are %2d and %2d %s" % (pair[0], pair[1], '-'*40))
+                print("Group #%2d: " % (pair[0]+1), group1)
+                print("Group #%2d: " % (pair[1]+1), group2)
+                print("Alpha #%2d: " % (pair[0]+1), alpha1)
+                print("Alpha #%2d: " % (pair[1]+1), alpha2)
                 print_b(b, group1, group2)
             while swap_is_profitable(b):
                 # Нахождение индексов вершин для перестановки в массивах group1, group2
@@ -176,8 +176,25 @@ def iterative_algorithm(graph, groups, info = True):
                 # Заново вычисляем характеристику b
                 b = get_b(graph, alpha1, alpha2, group1, group2)
                 if info:
-                    print("Change x%d and x%d" % (group1[group1_index], group2[group2_index]))
+                    print("Change x%d and x%d %s" % (group1[group1_index], group2[group2_index], '-'*20))
+                    print("Alpha #%2d: " % (pair[0]+1), alpha1)
+                    print("Alpha #%2d: " % (pair[1]+1), alpha2)
                     print_b(b, group1, group2)
     except StopIteration:
         pass
     return groups
+
+
+# Вычисляет значение целевой функции (число связей между группами)
+def calculate_Q(graph, groups):
+    result = 0
+    used_verticies = graph.get_used_verticies()
+    graph.clear_used_verticies()
+    for i in range(0, len(groups)):
+        for j in range(0, len(groups[i])):
+            all_adjacent_verticies = graph.get_all_adjacent_verticies(groups[i][j])
+            for k in range(0, len(all_adjacent_verticies)):
+                if(all_adjacent_verticies[k] not in groups[i]):
+                    result += graph.get_num_of_edges(all_adjacent_verticies[k], groups[i][j])
+    graph.add_to_used_verticies(used_verticies)
+    return int(result/2)

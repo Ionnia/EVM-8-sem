@@ -17,11 +17,11 @@ class Graph:
         print('%3s|' % (''), end='')
         for i in range(0, self.size):
             if i not in self.used_verticies:
-                print('%3s ' % ('x' + str(i)), end='')
+                print('%3s ' % ('x' + str(i+1)), end='')
         print('| %3s' % ('px'))
         for i in range(0, self.size):
             if i not in self.used_verticies:
-                print('%3s|' % ('x' + str(i)), end='')
+                print('%3s|' % ('x' + str(i+1)), end='')
                 for j in range(0, self.size):
                     if j not in self.used_verticies:
                         print('%3d ' % ( self.matrix[i][j] ), end='')
@@ -89,3 +89,9 @@ class Graph:
 
     def add_to_used_verticies(self, arr):
         self.used_verticies.update(arr)
+
+    def get_used_verticies(self):
+        return self.used_verticies
+
+    def clear_used_verticies(self):
+        self.used_verticies = set()
