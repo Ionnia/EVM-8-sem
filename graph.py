@@ -27,6 +27,9 @@ class Graph:
                         print('%3d ' % ( self.matrix[i][j] ), end='')
                 print('| %3d' % (self.px[i]))
 
+    def get_number_of_verticies(self):
+        return len(self.matrix)
+
     def update_min_local_degrees(self):
         for i in range(0, self.size):
             self.px[i] = 0
@@ -97,6 +100,13 @@ class Graph:
             result.append(local_degree)
         
         return result
+
+
+    def get_local_degree(self, v_index):
+        local_degree = 0
+        for i in range(0, len(self.matrix)):
+            local_degree += self.get_num_of_edges(v_index, i)
+        return local_degree
 
     
     # Рассчитывает связность с уже размещёнными (used) элементами

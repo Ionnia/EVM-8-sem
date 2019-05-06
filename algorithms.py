@@ -1,6 +1,7 @@
 from graph import Graph
 from itertools import combinations      # Нужно для получения всех перестановок групп
 from math import sqrt, pow
+import copy
 
 
 def get_max_index(arr):
@@ -269,6 +270,7 @@ def sequential_positioning_algorithm(graph, dimensions, info = True):
     positioning_queue = get_all_max_indicies(connectivity)
     if info:
         print("Число связей для каждого элемента: ", graph.get_all_local_degrees())
+        print("Коэффициенты связности: ", connectivity)
     for i in range(1, dimensions[0] * dimensions[1]):
         positioning_element = positioning_queue[0]
         positioning_queue = positioning_queue[1:]
@@ -283,4 +285,199 @@ def sequential_positioning_algorithm(graph, dimensions, info = True):
             print("ШАГ #%d" % (i) + "-"*40)
             print("Коэффициенты связности: ", connectivity)
             print("Выбираем для размещения элемент x%d" % (positioning_element+1))
+    return pos_matrix
+
+def get_l(pos_matrix, v1, v2):
+    v1_i, v1_j = 0, 0
+    v2_i, v2_j = 0, 0
+    for i in range(0, len(pos_matrix)):
+        for j in range(0, len(pos_matrix[i])):
+            if pos_matrix[i][j] == v1:
+                v1_i, v1_j = i, j
+            elif pos_matrix[i][j] == v2:
+                v2_i, v2_j = i, j
+    return abs(v1_i - v2_i) + abs(v1_j - v2_j)
+
+def get_Y_X_distance(pos_matrix, v1, v2):
+    v1_i, v1_j = 0, 0
+    v2_i, v2_j = 0, 0
+    for i in range(0, len(pos_matrix)):
+        for j in range(0, len(pos_matrix[i])):
+            if pos_matrix[i][j] == v1:
+                v1_i, v1_j = i, j
+            elif pos_matrix[i][j] == v2:
+                v2_i, v2_j = i, j
+    return abs(v1_i - v2_i), abs(v1_j - v2_j)
+
+def get_l_array(graph, pos_matrix):
+    l = []
+    for i in range(0, graph.get_number_of_verticies()):
+        tmp_list = []
+        for j in range(0, graph.get_number_of_verticies()):
+            if graph.get_num_of_edges(i, j) == 0:
+                tmp_list.append(None)
+            else:
+                tmp_list.append( get_l(pos_matrix, i, j) )
+        l.append(tmp_list)
+    return l
+
+# Вычисление целевой функции для задачи размещения
+def calculate_Q_positioning(graph, l_arr):
+    Q = 0
+    for i in range(0, graph.get_number_of_verticies()):
+        for j in range(0, graph.get_number_of_verticies()):
+            if l_arr[i][j] is not None:
+                Q += l_arr[i][j] * graph.get_num_of_edges(i, j)
+    return int(Q/2)
+
+# Вычисление средних расстояний между одним и остальными элементами
+def get_L_array(graph, l_arr):
+    L = []
+    local_degrees = graph.get_all_local_degrees()
+    for i in range(0, graph.get_number_of_verticies()):
+        all_adjacent_verticies = graph.get_all_adjacent_verticies(i)
+        L_value = 0
+        for j in range(0, len(all_adjacent_verticies)):
+            L_value += graph.get_num_of_edges(i, all_adjacent_verticies[j]) * l_arr[i][all_adjacent_verticies[j]]
+        L.append(L_value/local_degrees[i])
+    return L
+
+def print_arr(arr, string = None):
+    if string is not None:
+        print(string)
+    for i in range(0, len(arr)):
+        print('|', end='')
+        for j in range(0, len(arr[i])):
+            print(" %4s " % arr[i][j], end='')
+        print('|')
+
+def calculate_Xc(graph, pos_matrix, v_index):
+    all_adjacent_verticies = graph.get_all_adjacent_verticies(v_index)
+    X_coords = []
+    for i in range(0, len(all_adjacent_verticies)):
+        _, xd = get_all_coords_with_value(pos_matrix, all_adjacent_verticies[i])[0]
+        X_coords.append(xd)
+    sum = 0    
+    for i in range(0, len(all_adjacent_verticies)):
+        sum += graph.get_num_of_edges(v_index, all_adjacent_verticies[i]) * X_coords[i]
+    return sum/graph.get_local_degree(v_index)
+
+def calculate_Yc(graph, pos_matrix, v_index):
+    all_adjacent_verticies = graph.get_all_adjacent_verticies(v_index)
+    Y_coords = []
+    for i in range(0, len(all_adjacent_verticies)):
+       yd, _ = get_all_coords_with_value(pos_matrix, all_adjacent_verticies[i])[0]
+       Y_coords.append(yd)
+    sum = 0    
+    for i in range(0, len(all_adjacent_verticies)):
+        sum += graph.get_num_of_edges(v_index, all_adjacent_verticies[i]) * Y_coords[i]
+    return sum/graph.get_local_degree(v_index)
+
+def get_elements_by_coords(graph, pos_matrix, v_index, xc, yc):
+    v_y, v_x = get_all_coords_with_value(pos_matrix, v_index)[0]
+    x_is_greater = xc > v_x
+    y_is_greater = yc > v_y
+    elements = []
+    if x_is_greater and y_is_greater:
+        for i in range(v_y, len(pos_matrix)):
+            for j in range(v_x, len(pos_matrix[i])):
+                if graph.get_num_of_edges(v_index, pos_matrix[i][j]) > 0:
+                    elements.append(pos_matrix[i][j])
+    elif x_is_greater and not y_is_greater:
+        for i in range(0, v_y):
+            for j in range(v_x, len(pos_matrix[i])):
+                if graph.get_num_of_edges(v_index, pos_matrix[i][j]) > 0:
+                    elements.append(pos_matrix[i][j])
+    elif not x_is_greater and y_is_greater:
+        for i in range(v_y, len(pos_matrix)):
+            for j in range(0, v_x):
+                if graph.get_num_of_edges(v_index, pos_matrix[i][j]) > 0:
+                    elements.append(pos_matrix[i][j])
+    else:
+        for i in range(0, v_y):
+            for j in range(0, v_x):
+                if graph.get_num_of_edges(v_index, pos_matrix[i][j]) > 0:
+                    elements.append(pos_matrix[i][j])
+    return elements
+
+
+# Итерационный алгоритм размещения
+def iterative_positioning_algorithm(graph, pos_matrix, info = True):
+    graph.clear_used_verticies()
+    # l = get_l_array(graph, pos_matrix)
+    # print_arr(l, "Matrix of l ------------------------")
+    # L = get_L_array(graph, l)
+    # print(L)
+    # max_index = get_max_index(L)
+    # print("Choose x%d" % (max_index+1))
+    # X_c = calculate_Xc(graph, pos_matrix, max_index)
+    # print("Xc: ", X_c)
+    # Y_c = calculate_Yc(graph, pos_matrix, max_index)
+    # print("Yc: ", Y_c)
+    # print("Choosing from elements: ")
+    # elements = get_elements_by_coords(graph, pos_matrix, max_index, X_c, Y_c)
+    # print(elements)
+    # Q = calculate_Q_positioning(graph, l)
+    # print("Q = ", calculate_Q_positioning(graph, l))
+    # Qs = []
+    # for i in range(0, len(elements)):
+    #     tmp_pos_matrix = copy.deepcopy(pos_matrix)
+    #     v_y, v_x = get_all_coords_with_value(pos_matrix, max_index)[0]
+    #     y, x = get_all_coords_with_value(pos_matrix, elements[i])[0]
+    #     tmp_pos_matrix[v_y][v_x], tmp_pos_matrix[y][x] = tmp_pos_matrix[y][x], tmp_pos_matrix[v_y][v_x]
+    #     Qs.append(calculate_Q_positioning(graph, get_l_array(graph, tmp_pos_matrix)))
+
+    # print("New Qs: ", Qs)
+    # # Выбираем перестановку основываясь на целевой функции
+    # min_index = get_min_index(Qs)
+    # if Qs[min_index] < Q:
+    #     v_y, v_x = get_all_coords_with_value(pos_matrix, max_index)[0]
+    #     y, x = get_all_coords_with_value(pos_matrix, elements[min_index])[0]
+    #     pos_matrix[v_y][v_x], pos_matrix[y][x] = pos_matrix[y][x], pos_matrix[v_y][v_x]
+
+    counter = 1
+    continue_iterations = True
+    while continue_iterations:
+        # Вычисляем длину проводника
+        l = get_l_array(graph, pos_matrix)
+        # Вычисляем средние расстояния
+        L = get_L_array(graph, l)
+        # Находим лучшего кандидата для перестановки
+        max_index = get_max_index(L)
+        # В какую сторону переставлять
+        X_c = calculate_Xc(graph, pos_matrix, max_index)
+        Y_c = calculate_Yc(graph, pos_matrix, max_index)
+        # Находим подходящие элементы
+        elements = get_elements_by_coords(graph, pos_matrix, max_index, X_c, Y_c)
+        # Находим текущее значение целевой функции
+        Q = calculate_Q_positioning(graph, l)
+        # Находим потенциальные значения целевой функции после перестановки
+        Qs = []
+        for i in range(0, len(elements)):
+            tmp_pos_matrix = copy.deepcopy(pos_matrix)
+            v_y, v_x = get_all_coords_with_value(pos_matrix, max_index)[0]
+            y, x = get_all_coords_with_value(pos_matrix, elements[i])[0]
+            tmp_pos_matrix[v_y][v_x], tmp_pos_matrix[y][x] = tmp_pos_matrix[y][x], tmp_pos_matrix[v_y][v_x]
+            Qs.append(calculate_Q_positioning(graph, get_l_array(graph, tmp_pos_matrix)))
+        # Выбираем перестановку основываясь на минимизации целевой функции
+        min_index = get_min_index(Qs)
+        continue_iterations = Qs[min_index] < Q
+        if continue_iterations:
+            v_y, v_x = get_all_coords_with_value(pos_matrix, max_index)[0]
+            y, x = get_all_coords_with_value(pos_matrix, elements[min_index])[0]
+            pos_matrix[v_y][v_x], pos_matrix[y][x] = pos_matrix[y][x], pos_matrix[v_y][v_x]
+        # Вывод промежуточной информации
+        if info:
+            print("ШАГ #", counter, "="*40)
+            print_arr(l, "Длины проводника: l ------------------------")
+            print("Средние расстояния: ", L)
+            print("Выбранная для перестановки вершина x%d" % (max_index+1))
+            print("Xc: ", X_c)
+            print("Yc: ", Y_c)
+            print("Значение целевой функции: ", Q)
+            print("Потенциальные элементы для перестановки: ", elements)
+            print("Потенциальные значения цел. функ. после перестановки: ", Qs)
+            if continue_iterations:
+                print("[!]Меняем местами x" + str(max_index+1) + " и x" + str(elements[min_index]+1))
+        counter += 1
     return pos_matrix

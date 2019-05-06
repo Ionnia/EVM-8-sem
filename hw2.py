@@ -1,7 +1,7 @@
 # Второе домашнее задание по ЭВМ. Задача размещения.
 
 from graph import Graph
-from algorithms import sequential_positioning_algorithm
+from algorithms import sequential_positioning_algorithm, iterative_positioning_algorithm
 
 # Вариант 1
 matrix = [
@@ -39,7 +39,14 @@ matrix = [
 
 graph = Graph(matrix)
 
-pos_matrix = sequential_positioning_algorithm(graph, [6, 5])
+pos_matrix = sequential_positioning_algorithm(graph, [6, 5], info = False)
+
+for i in range(0, len(pos_matrix)):
+    for j in range(0, len(pos_matrix[i])):
+        print("%3s " % ("x" + str(pos_matrix[i][j]+1)), end='')
+    print()
+
+pos_matrix = iterative_positioning_algorithm(graph, pos_matrix)
 
 for i in range(0, len(pos_matrix)):
     for j in range(0, len(pos_matrix[i])):
