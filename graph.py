@@ -87,6 +87,42 @@ class Graph:
     def get_num_of_edges(self, v_index1, v_index2):
         return self.matrix[v_index1][v_index2]
 
+    def get_all_local_degrees(self):
+        result = []
+        
+        for i in range(0, len(self.matrix)):
+            local_degree = 0
+            for j in range(0, len(self.matrix[i])):
+                local_degree += self.get_num_of_edges(i, j)
+            result.append(local_degree)
+        
+        return result
+
+    
+    # Рассчитывает связность с уже размещёнными (used) элементами
+    def get_connectivity_with_used_verticies(self):
+        result = []
+        
+        # Считаем количество связей с уже размещёнными элементами (C_i = SUM (r_ij))
+        for i in range(0, len(self.matrix)):
+            connectivity = 0
+            if i not in self.used_verticies:
+                for j in self.used_verticies:
+                    connectivity += self.get_num_of_edges(i, j)
+            else:
+                connectivity = None
+            result.append(connectivity)
+        
+        all_loc_degrees = self.get_all_local_degrees()
+        # C_i = 2 * SUM (r_ij) - ro(x_i)
+        for i in range(0, len(result)):
+            if result[i] is not None:
+                result[i] = 2 * result[i] - all_loc_degrees[i]
+        
+
+        return result
+
+
     def add_to_used_verticies(self, arr):
         self.used_verticies.update(arr)
 

@@ -1,7 +1,7 @@
-# Первое домашнее задание по ЭВМ. Последовательный и параллельный алгоритм. Задача компоновки.
+# Второе домашнее задание по ЭВМ. Задача размещения.
 
 from graph import Graph
-from algorithms import sequential_algorithm, iterative_algorithm, calculate_Q
+from algorithms import sequential_positioning_algorithm
 
 # Вариант 1
 matrix = [
@@ -39,25 +39,9 @@ matrix = [
 
 graph = Graph(matrix)
 
-groups = sequential_algorithm(graph, [7, 6, 5, 4, 4, 4], info = False)
+pos_matrix = sequential_positioning_algorithm(graph, [6, 5])
 
-print("AFTER SEQUETIAL ALGORITHM")
-print("GROUPS: ")
-for i in range(0, len(groups)):
-    groups[i].sort()
-    print("Group #", i)
-    print([x+1 for x in groups[i]])
-
-print("Sequential Q = ", calculate_Q(graph, groups))
-
-groups = iterative_algorithm(graph, groups, info = True)
-
-print("AFTER ITEARTIVE ALGORITHM")
-print("GROUPS ITERATIVE: ")
-for i in range(0, len(groups)):
-    groups[i].sort()
-    print("Group #", i+1)
-    print([x+1 for x in groups[i]])
-
-
-print("Iterative Q = ", calculate_Q(graph, groups))
+for i in range(0, len(pos_matrix)):
+    for j in range(0, len(pos_matrix[i])):
+        print("%3s " % ("x" + str(pos_matrix[i][j]+1)), end='')
+    print()

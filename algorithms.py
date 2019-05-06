@@ -1,13 +1,37 @@
 from graph import Graph
 from itertools import combinations      # Нужно для получения всех перестановок групп
+from math import sqrt, pow
 
 
 def get_max_index(arr):
     max_index = 0
     for i in range(1, len(arr)):
-        if arr[i] > arr[max_index]:
-            max_index = i
+        if arr[i] is not None and arr[max_index] is not None:
+            if arr[i] > arr[max_index]:
+                max_index = i
+        else:
+            if arr[max_index] is None:
+                max_index = i
     return max_index
+
+def get_all_max_indicies(arr):
+    max_index = get_max_index(arr)
+    max_indicies = []
+    for i in range(0, len(arr)):
+        if arr[i] == arr[max_index]:
+            max_indicies.append(i)
+    return max_indicies
+
+def get_min_index(arr):
+    min_index = 0
+    for i in range(1, len(arr)):
+        if arr[i] is not None and arr[min_index] is not None:
+            if arr[i] < arr[min_index]:
+                min_index = i
+        else:
+            if arr[min_index] is None:
+                min_index = i
+    return min_index
 
 def get_all_sigmas(graph, group, v_index):
     verticies = [v for v in group if v is not v_index]
@@ -198,3 +222,65 @@ def calculate_Q(graph, groups):
                     result += graph.get_num_of_edges(all_adjacent_verticies[k], groups[i][j])
     graph.add_to_used_verticies(used_verticies)
     return int(result/2)
+
+def get_min_value_greater_than_x(matrix, x):
+    min_value = 9999999999
+    for i in range(0, len(matrix)):
+        for j in range(0, len(matrix[i])):
+            if matrix[i][j] > x and matrix[i][j] < min_value:
+                min_value = matrix[i][j]
+    return min_value
+
+def get_all_coords_with_value(matrix, value):
+    result = []
+    for i in range(0, len(matrix)):
+        for j in range(0, len(matrix[i])):
+            if matrix[i][j] == value:
+                result.append([i, j])
+    return result
+
+# Вычисляет последовательность координат для расположения элементов
+def get_list_of_coordinates(dimensions):
+    positions = []
+    result = []
+    for i in range(0, dimensions[0]):
+        positions.append([0] * dimensions[1])
+        for j in range(0, dimensions[1]):
+            positions[i][j] = sqrt(pow(i, 2) + pow(j, 2))
+    min_value = 0
+    result += get_all_coords_with_value(positions, min_value)
+    while len(result) < dimensions[0] * dimensions[1]:
+        min_value = get_min_value_greater_than_x(positions, min_value)
+        result += get_all_coords_with_value(positions, min_value)
+    return result
+
+# Последовательный алгоритм размещения
+def sequential_positioning_algorithm(graph, dimensions, info = True):
+    pos_matrix = []
+    for i in range(0, dimensions[0]):
+        pos_matrix.append([None] * dimensions[1])
+    # Последовательность координат для размещения
+    coordinates_sequence = get_list_of_coordinates(dimensions)
+    # Разместим элемент x1 на плате
+    pos_matrix[0][0] = 0
+    graph.add_to_used_verticies([0])
+    connectivity = graph.get_connectivity_with_used_verticies()
+    # Очередь на размещение
+    positioning_queue = get_all_max_indicies(connectivity)
+    if info:
+        print("Число связей для каждого элемента: ", graph.get_all_local_degrees())
+    for i in range(1, dimensions[0] * dimensions[1]):
+        positioning_element = positioning_queue[0]
+        positioning_queue = positioning_queue[1:]
+        # Размещаем positioning_element
+        x, y = coordinates_sequence[i]
+        pos_matrix[x][y] = positioning_element
+        graph.add_to_used_verticies([positioning_element])
+        if len(positioning_queue) == 0:
+            connectivity = graph.get_connectivity_with_used_verticies()
+            positioning_queue = get_all_max_indicies(connectivity)           
+        if info:
+            print("ШАГ #%d" % (i) + "-"*40)
+            print("Коэффициенты связности: ", connectivity)
+            print("Выбираем для размещения элемент x%d" % (positioning_element+1))
+    return pos_matrix
